@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: apptrack
+      POSTGRES_PASSWORD: apptrack
+      POSTGRES_DB: apptrack
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apptrack"]
+      interval: 5s
+      retries: 10
+
+  server:
+    build: ./server
+    environment:
+      DATABASE_URL: postgres://apptrack:apptrack@db:5432/apptrack
+      CLIENT_ORIGIN: http://localhost:8080
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build: ./client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+
+volumes:
+  db-data:
